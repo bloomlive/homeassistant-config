@@ -1,0 +1,59 @@
+template:
+  - sensor:
+
+      - name: "Võrgutasu pakett 2"
+        unique_id: "elektrilevi_vorgutasu_vork2"
+        state: >
+          {% set price = {
+            "day": 7.53,
+            "night": 4.35
+          } %}
+          {% set hour = now().hour %}
+          {% set holiday = is_state('calendar.estonia', 'on') %}
+          {% set workday = is_state('binary_sensor.workday_sensor', 'on') %}
+          {% set is_day = 7 <= hour < 22 %}
+          {% set is_weekend = holiday or not workday %}
+          {% if is_weekend %}
+            {{ price.night }}
+          {% elif is_day %}
+            {{ price.day }}
+          {% else %}
+            {{ price.night }}
+          {% endif %}
+
+      - name: "Võrgutasu pakett 5"
+        unique_id: "elektrilevi_vorgutasu_vork5"
+        state: >
+          {% set price = {
+            "day": 6.56,
+            "day_peak": 10.14,
+            "night": 3.76,
+            "holiday_peak": 5.88
+          } %}
+          {% set hour = now().hour %}
+          {% set month = now().month %}
+          {% set holiday = is_state('calendar.estonia', 'on') %}
+          {% set workday = is_state('binary_sensor.workday_sensor', 'on') %}
+          {% set is_weekend = holiday or not workday %}
+          {% set is_day = 7 <= hour < 22 %}
+          {% set winter = month in [11,12,1,2,3] %}
+          {% set workday_peak = winter and (9 <= hour < 12 or 16 <= hour < 20) %}
+          {% set weekend_peak = winter and (16 <= hour < 20) %}
+          {% if is_weekend %}
+            {{ price.holiday_peak if weekend_peak else price.night }}
+          {% elif workday_peak %}
+            {{ price.day_peak }}
+          {% elif is_day %}
+            {{ price.day }}
+          {% else %}
+            {{ price.night }}
+          {% endif %}
+
+      - name: "Elektri koguhind"
+        unique_id: "elektri_koguhind"
+        state: >
+          {% set borsi = states('sensor.nord_pool_price_current_price') | float(0) * 100 %}
+          {% set vork = states('sensor.vorgutasu_pakett_5') | float(0) %}
+          {{ (borsi + vork) | round(4) }}
+        unit_of_measurement: "ct/kWh"
+        state_class: measurement
