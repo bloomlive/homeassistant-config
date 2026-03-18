@@ -1,0 +1,356 @@
+# =============================================================================
+# Lenercom / Epchance Solar Inverter Integration
+# =============================================================================
+#
+# PLACEMENT:
+#   Place this file in your packages directory, e.g.:
+#   /homeassistant/packages/lenercom.yaml
+#
+#   Make sure your configuration.yaml includes packages:
+#     homeassistant:
+#       packages: !include_dir_named packages/
+#
+# SECRET REQUIRED:
+#   Add the following line to /homeassistant/secrets.yaml:
+#     lenercom_plant_payload: '{"pn":"YOUR_DEVICE_NUMBER"}'
+#
+#   Replace YOUR_DEVICE_NUMBER with your inverter's device number,
+#
+#   IMPORTANT: Type the secret manually — do not copy/paste from a PDF or
+#   Windows app, as hidden control characters will cause a JSON parse error
+#   from the API (char \u001A at offset 22).
+#
+# POLLING INTERVAL:
+#   scan_interval is set to 300 seconds (5 minutes). The API is a cloud
+#   endpoint so it doesn't update more often anyway.
+#
+# BUGS: 
+#   Some of the data seems wrong in the statistics, especially longterm,
+#   but there doesn't seem to be a fix for this, as the API is like this.
+#
+# =============================================================================
+
+sensor:
+  - platform: rest
+    name: "Plant Data"
+    unique_id: lenercom_plant_data
+    resource: http://data.epchance.com:9003/api/data/myPlantInfoYz
+    method: POST
+    headers:
+      Content-Type: application/json
+    payload: !secret lenercom_plant_payload
+    scan_interval: 300
+    value_template: "{{ value_json.data.operating_mode }}"
+    json_attributes_path: "$.data"
+    json_attributes:
+      - operating_mode
+      - battery_soc
+      - battery_temperature
+      - inverter_temperature
+      - grid_volatage_phase1
+      - grid_volatage_phase2
+      - grid_volatage_phase3
+      - grid_current_phase1
+      - grid_current_phase2
+      - grid_current_phase3
+      - photovoltaics_production_power
+      - AC_volatage_phase1
+      - AC_volatage_phase2
+      - AC_volatage_phase3
+      - AC_current_phase1
+      - AC_current_phase2
+      - AC_current_phase3
+      - AC_total_power
+      - Home_load_total_power
+      - total_energy_produced_day
+      - total_energy_produced_month
+      - total_energy_produced_year
+      - total_energy_produced
+      - battery_power_total
+      - battery_power_voltage
+      - battery_power_current
+      - charge_today
+      - charge_month
+      - charge_year
+      - charge_total
+      - discharge_today
+      - discharge_month
+      - discharge_year
+      - discharge_total
+
+template:
+  - sensor:
+      - name: "Operating Mode"
+        unique_id: lenercom_operating_mode
+        state: >
+          {{ {
+            0: 'Self consume',
+            1: 'Peak shift',
+            2: 'Charge priority'
+          }[state_attr('sensor.plant_data', 'operating_mode') | int(0)] }}
+
+      - name: "Battery Level"
+        unique_id: lenercom_battery_level
+        unit_of_measurement: "%"
+        device_class: battery
+        state: >
+          {{ state_attr('sensor.plant_data', 'battery_soc')
+             | replace('%','') | int(0) }}
+
+      - name: "Battery Temperature"
+        unique_id: lenercom_battery_temperature
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'battery_temperature')
+             | replace('℃','') | float(0) }}
+
+      - name: "Inverter Temperature"
+        unique_id: lenercom_inverter_temperature
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'inverter_temperature')
+             | replace('℃','') | float(0) }}
+
+      - name: "Grid Voltage Phase 1"
+        unique_id: lenercom_grid_voltage_phase1
+        unit_of_measurement: "V"
+        device_class: voltage
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'grid_volatage_phase1') | float(0) }}
+
+      - name: "Grid Voltage Phase 2"
+        unique_id: lenercom_grid_voltage_phase2
+        unit_of_measurement: "V"
+        device_class: voltage
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'grid_volatage_phase2') | float(0) }}
+
+      - name: "Grid Voltage Phase 3"
+        unique_id: lenercom_grid_voltage_phase3
+        unit_of_measurement: "V"
+        device_class: voltage
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'grid_volatage_phase3') | float(0) }}
+
+      - name: "Grid Current Phase 1"
+        unique_id: lenercom_grid_current_phase1
+        unit_of_measurement: "A"
+        device_class: current
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'grid_current_phase1') | float(0) }}
+
+      - name: "Grid Current Phase 2"
+        unique_id: lenercom_grid_current_phase2
+        unit_of_measurement: "A"
+        device_class: current
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'grid_current_phase2') | float(0) }}
+
+      - name: "Grid Current Phase 3"
+        unique_id: lenercom_grid_current_phase3
+        unit_of_measurement: "A"
+        device_class: current
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'grid_current_phase3') | float(0) }}
+
+      - name: "AC Voltage Phase 1"
+        unique_id: lenercom_ac_voltage_phase1
+        unit_of_measurement: "V"
+        device_class: voltage
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'AC_volatage_phase1') | float(0) }}
+
+      - name: "AC Voltage Phase 2"
+        unique_id: lenercom_ac_voltage_phase2
+        unit_of_measurement: "V"
+        device_class: voltage
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'AC_volatage_phase2') | float(0) }}
+
+      - name: "AC Voltage Phase 3"
+        unique_id: lenercom_ac_voltage_phase3
+        unit_of_measurement: "V"
+        device_class: voltage
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'AC_volatage_phase3') | float(0) }}
+
+      - name: "AC Current Phase 1"
+        unique_id: lenercom_ac_current_phase1
+        unit_of_measurement: "A"
+        device_class: current
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'AC_current_phase1') | float(0) }}
+
+      - name: "AC Current Phase 2"
+        unique_id: lenercom_ac_current_phase2
+        unit_of_measurement: "A"
+        device_class: current
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'AC_current_phase2') | float(0) }}
+
+      - name: "AC Current Phase 3"
+        unique_id: lenercom_ac_current_phase3
+        unit_of_measurement: "A"
+        device_class: current
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'AC_current_phase3') | float(0) }}
+
+      - name: "AC Total Power"
+        unique_id: lenercom_ac_total_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'AC_total_power') | float(0) }}
+
+      - name: "Home Load Power"
+        unique_id: lenercom_home_load_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'Home_load_total_power') | float(0) }}
+
+      - name: "PV Production Power"
+        unique_id: lenercom_pv_production_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'photovoltaics_production_power') | float(0) }}
+
+      - name: "Battery Power"
+        unique_id: lenercom_battery_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'battery_power_total') | float(0) }}
+
+      - name: "Battery Voltage"
+        unique_id: lenercom_battery_voltage
+        unit_of_measurement: "V"
+        device_class: voltage
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'battery_power_voltage') | float(0) }}
+
+      - name: "Battery Current"
+        unique_id: lenercom_battery_current
+        unit_of_measurement: "A"
+        device_class: current
+        state_class: measurement
+        state: >
+          {{ state_attr('sensor.plant_data', 'battery_power_current') | float(0) }}
+
+      - name: "Energy Produced (Day)"
+        unique_id: lenercom_energy_day
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.plant_data', 'total_energy_produced_day') | float(0) }}
+
+      - name: "Energy Produced (Month)"
+        unique_id: lenercom_energy_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.plant_data', 'total_energy_produced_month') | float(0) }}
+
+      - name: "Energy Produced (Year)"
+        unique_id: lenercom_energy_year
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.plant_data', 'total_energy_produced_year') | float(0) }}
+
+      - name: "Energy Produced (Total)"
+        unique_id: lenercom_energy_total
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        state: >
+          {{ state_attr('sensor.plant_data', 'total_energy_produced') | float(0) }}
+
+      - name: "Battery Charge (Today)"
+        unique_id: lenercom_charge_today
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.plant_data', 'charge_today') | float(0) }}
+
+      - name: "Battery Charge (Month)"
+        unique_id: lenercom_charge_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.plant_data', 'charge_month') | float(0) }}
+
+      - name: "Battery Charge (Year)"
+        unique_id: lenercom_charge_year
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.plant_data', 'charge_year') | float(0) }}
+
+      - name: "Battery Charge (Total)"
+        unique_id: lenercom_charge_total
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        state: >
+          {{ state_attr('sensor.plant_data', 'charge_total') | float(0) }}
+
+      - name: "Battery Discharge (Today)"
+        unique_id: lenercom_discharge_today
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.plant_data', 'discharge_today') | float(0) }}
+
+      - name: "Battery Discharge (Month)"
+        unique_id: lenercom_discharge_month
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.plant_data', 'discharge_month') | float(0) }}
+
+      - name: "Battery Discharge (Year)"
+        unique_id: lenercom_discharge_year
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {{ state_attr('sensor.plant_data', 'discharge_year') | float(0) }}
+
+      - name: "Battery Discharge (Total)"
+        unique_id: lenercom_discharge_total
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        state: >
+          {{ state_attr('sensor.plant_data', 'discharge_total') | float(0) }}
